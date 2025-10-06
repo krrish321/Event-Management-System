@@ -89,70 +89,145 @@
 //   }
 // }
 
-import { NextResponse } from "next/server";
-import db from "../../../../backend/config/db.js";
+// import { NextResponse } from "next/server";
+// import db from "../../../../backend/config/db.js";
 
-// ✅ Get single event by ID
+// // ✅ Get single event by ID
+// export async function GET(req: Request, { params }: { params: { id: string } }) {
+//   const { id } = params;
+//   try {
+//     const [rows]: any = await db.execute("SELECT * FROM events WHERE id = ?", [id]);
+
+//     if (rows.length === 0) {
+//       return NextResponse.json({ message: "Event not found" }, { status: 404 });
+//     }
+
+//     return NextResponse.json(rows[0], { status: 200 });
+//   } catch (error: any) {
+//     console.error("GET BY ID Error:", error);
+//     return NextResponse.json({ error: error.message }, { status: 500 });
+//   }
+// }
+
+// // ✅ Update event by ID
+// export async function PUT(req: Request, { params }: { params: { id: string } }) {
+//   const { id } = params;
+
+//   try {
+//     // ✅ Check content type
+//     const contentType = req.headers.get("content-type") || "";
+//     let body: any = {};
+
+//     if (contentType.includes("application/json")) {
+//       body = await req.json();
+//     } else if (contentType.includes("multipart/form-data")) {
+//       // FormData handling (placeholder)
+//       // Note: Next.js 13 App Router does not parse multipart natively, use formidable/multer if needed
+//       body = {}; // For now, frontend sends JSON first
+//     }
+
+//     const {
+//       location = null,
+//       startDate = null,
+//       attendeesCount = null,
+//       updatingDate = null,
+//     } = body;
+
+//     // ✅ Validate numeric field
+//     const attendees_count_num =
+//       attendeesCount !== null && attendeesCount !== undefined
+//         ? parseInt(attendeesCount)
+//         : null;
+
+//     const [result]: any = await db.execute(
+//       `UPDATE events 
+//        SET location = ?, start_datetime = ?, attendees_count = ?, updated_at = ?
+//        WHERE id = ?`,
+//       [location || null, startDate || null, attendees_count_num, updatingDate || null, id]
+//     );
+
+//     if (result.affectedRows === 0) {
+//       return NextResponse.json({ message: "Event not found" }, { status: 404 });
+//     }
+
+//     return NextResponse.json({ message: "Event updated successfully!" }, { status: 200 });
+//   } catch (error: any) {
+//     console.error("PUT Error:", error);
+//     return NextResponse.json({ error: error.message }, { status: 500 });
+//   }
+// }
+
+import { NextResponse } from "next/server";
+
+// Frontend ke liye live backend URL (jo Vercel variables se aayegi)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
+// Zaroori: Vercel par build fail hone se bachne ke liye db import hata diya gaya hai.
+// Yeh file ab seedhe Railway Backend se data fetch karegi.
+
+// ✅ Get single event by ID (GET Request)
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const { id } = params;
-  try {
-    const [rows]: any = await db.execute("SELECT * FROM events WHERE id = ?", [id]);
 
-    if (rows.length === 0) {
-      return NextResponse.json({ message: "Event not found" }, { status: 404 });
+  if (!API_BASE_URL) {
+    return NextResponse.json({ error: "Backend API URL is not configured." }, { status: 500 });
+  }
+
+  try {
+    // Railway Backend ke /api/events/[id] endpoint par GET request bhej rahe hain
+    const response = await fetch(`${API_BASE_URL}/api/events/${id}`, {
+      // Cache ko disable kar rahe hain taki hamesha naya data mile
+      cache: 'no-store', 
+    });
+
+    // Agar Backend se 4xx ya 5xx status aata hai
+    if (!response.ok) {
+      const errorData = await response.json();
+      return NextResponse.json(errorData, { status: response.status });
     }
 
-    return NextResponse.json(rows[0], { status: 200 });
-  } catch (error: any) {
-    console.error("GET BY ID Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const data = await response.json();
+    return NextResponse.json(data, { status: 200 });
+
+  } catch (error) {
+    console.error("GET BY ID Error in Frontend Route:", error);
+    return NextResponse.json({ error: "Failed to fetch event data from the live backend." }, { status: 500 });
   }
 }
 
-// ✅ Update event by ID
+// ✅ Update event by ID (PUT Request)
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const { id } = params;
 
+  if (!API_BASE_URL) {
+    return NextResponse.json({ error: "Backend API URL is not configured." }, { status: 500 });
+  }
+  
   try {
-    // ✅ Check content type
-    const contentType = req.headers.get("content-type") || "";
-    let body: any = {};
+    // Body parse 
+    const body = await req.json();
 
-    if (contentType.includes("application/json")) {
-      body = await req.json();
-    } else if (contentType.includes("multipart/form-data")) {
-      // FormData handling (placeholder)
-      // Note: Next.js 13 App Router does not parse multipart natively, use formidable/multer if needed
-      body = {}; // For now, frontend sends JSON first
+    // Railway Backend /api/events/[id] 
+    const response = await fetch(`${API_BASE_URL}/api/events/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Backend
+      body: JSON.stringify(body), 
+    });
+
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      return NextResponse.json(errorData, { status: response.status });
     }
 
-    const {
-      location = null,
-      startDate = null,
-      attendeesCount = null,
-      updatingDate = null,
-    } = body;
+    const data = await response.json();
+    return NextResponse.json(data, { status: 200 });
 
-    // ✅ Validate numeric field
-    const attendees_count_num =
-      attendeesCount !== null && attendeesCount !== undefined
-        ? parseInt(attendeesCount)
-        : null;
-
-    const [result]: any = await db.execute(
-      `UPDATE events 
-       SET location = ?, start_datetime = ?, attendees_count = ?, updated_at = ?
-       WHERE id = ?`,
-      [location || null, startDate || null, attendees_count_num, updatingDate || null, id]
-    );
-
-    if (result.affectedRows === 0) {
-      return NextResponse.json({ message: "Event not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ message: "Event updated successfully!" }, { status: 200 });
-  } catch (error: any) {
-    console.error("PUT Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error("PUT Error in Frontend Route:", error);
+    return NextResponse.json({ error: "Failed to update event via live backend." }, { status: 500 });
   }
 }
