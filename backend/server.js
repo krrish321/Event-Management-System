@@ -146,8 +146,7 @@ app.use(express.json());
 app.use(cors({
   origin: [
     "http://localhost:3000", // local dev
-    "https://inc-event-management-system.vercel.app", // deployed frontend
-    "https://inc-event-management-system-5zoqlvwyd-krrish321s-projects.vercel.app" // another vercel preview
+    "https://event-management-system-hazel-six.vercel.app", //preview
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
