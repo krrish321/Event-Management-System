@@ -156,67 +156,100 @@
 //     return NextResponse.json({ error: error.message }, { status: 500 });
 //   }
 // }
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-// Frontend ke liye live backend URL (jo Vercel variables se aayegi)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+// Railway backend ki base URL Environment Variable se milegi.
+// Yeh Vercel function mein 'API_URL' variable set hone ke baad hi kaam karega.
+const RAILWAY_API_URL = process.env.API_URL;
 
-// --- Helper Function for Clean Fetching ---
-const handleFetch = async (endpoint: string, options: RequestInit = {}) => {
-  if (!API_BASE_URL) {
-    // If NEXT_PUBLIC_API_URL is missing, return error
-    return { error: "Backend API URL is not configured." };
+// Check karte hain ki variable set hai ya nahi (safety check)
+if (!RAILWAY_API_URL) {
+  console.error("❌ FATAL: API_URL environment variable is not set.");
+}
+
+
+/**
+ * GET handler to fetch all events from the Railway backend.
+ * Route: /api/events
+ */
+export async function GET(request: Request) {
+  if (!RAILWAY_API_URL) {
+    return NextResponse.json(
+      { error: "API_URL configuration missing on server." },
+      { status: 500 }
+    );
+  }
+
+  try {
+    const response = await fetch(`${RAILWAY_API_URL}/api/events`, {
+      method: 'GET',
+      // Ensure Vercel knows not to cache this data heavily (optional, but good practice)
+      cache: 'no-store', 
+    });
+
+    if (!response.ok) {
+      // Agar Railway se 4xx ya 5xx status aaya, toh use aage bhejein
+      const errorText = await response.text();
+      console.error(`❌ Backend error (${response.status}):`, errorText);
+      return NextResponse.json(
+        { error: `Backend API failed with status ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+
+  } catch (error) {
+    console.error("❌ Error fetching from Railway backend:", error);
+    // Vercel serverless function se koi unhandled network/fetch error
+    return NextResponse.json(
+      { error: "Failed to connect to the external API service." },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST handler to create a new event.
+ * Route: /api/events
+ */
+export async function POST(request: Request) {
+  if (!RAILWAY_API_URL) {
+    return NextResponse.json(
+      { error: "API_URL configuration missing on server." },
+      { status: 500 }
+    );
   }
   
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    const body = await request.json();
+
+    const response = await fetch(`${RAILWAY_API_URL}/api/events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
 
     if (!response.ok) {
-      // Backend se aaye hue error ko catch karein
-      const errorData = await response.json().catch(() => ({ message: "Backend failed without JSON response." }));
-      return { error: errorData.message || errorData.error || `Backend connection error: ${response.status}` };
+      const errorText = await response.text();
+      console.error(`❌ Backend POST error (${response.status}):`, errorText);
+      return NextResponse.json(
+        { error: `Event creation failed at backend: ${response.status}` },
+        { status: response.status }
+      );
     }
 
-    return { data: await response.json() };
+    const data = await response.json();
+    return NextResponse.json(data);
 
   } catch (error) {
-    console.error("Network or Fetch Error:", error);
-    return { error: "Failed to connect to the live backend server." };
+    console.error("❌ Error posting to Railway backend:", error);
+    return NextResponse.json(
+      { error: "Failed to process event creation request." },
+      { status: 500 }
+    );
   }
-};
-// ------------------------------------------
-
-
-// ✅ Get all events (GET /api/events)
-export async function GET() {
-  // Railway Backend ke /api/events endpoint par GET request bhej rahe hain
-  const { data, error } = await handleFetch("/api/events", { cache: 'no-store' });
-
-  if (error) {
-    console.error("Vercel GET Events Route Failed:", error);
-    // Vercel se 500 status code return karein
-    return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
-  }
-
-  return NextResponse.json(data, { status: 200 });
-}
-
-// ✅ Create new event (POST /api/events)
-export async function POST(req: Request) {
-  const body = await req.json();
-
-  // Railway Backend ke /api/events endpoint par POST request bhej rahe hain
-  const { data, error } = await handleFetch("/api/events", {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
-  if (error) {
-    console.error("Vercel POST Event Route Failed:", error);
-    return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
-  }
-
-  // Backend se aaya hua success response return karein (usually 201)
-  return NextResponse.json(data, { status: 201 });
 }
