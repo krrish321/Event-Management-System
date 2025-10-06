@@ -51,6 +51,9 @@
 
 // export default pool;
 
+
+
+
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
@@ -58,8 +61,10 @@ dotenv.config();
 
 // Port ko hamesha number format mein hona chahiye, par process.env string deta hai.
 // Railway par MYSQL_PORT set hai (Screenshot 378 mein dikha).
+// parseInt function se string ko number mein badalte hain.
 const dbPort = process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT, 10) : 3306;
 
+// Final DB Connection Configuration
 const db = mysql.createPool({
     // HOST: Railway ka variable (MYSQL_HOST) ya local (localhost)
     host: process.env.MYSQL_HOST || process.env.DB_HOST || "localhost",
@@ -81,20 +86,8 @@ const db = mysql.createPool({
     queueLimit: 0,
 });
 
-// ⚡ CRITICAL STEP: Connection Test and Crash Prevention
-// Pool create hote hi ek dummy query chala kar connection test karte hain.
-// Agar connection fail hua, toh yeh try/catch block server ko crash hone se bachayega,
-// aur humein asli error log mein dikhega.
-(async () => {
-    try {
-        await db.query("SELECT 1");
-        console.log("✅ Database connection successful!");
-    } catch (error) {
-        // Agar yahan error aaya toh iska matlab hai ki connection string galat hai.
-        console.error("❌ FATAL ERROR: Could not connect to the database:", error.message);
-        // Container ko crash hone se bachane ke liye, hum yahan se throw nahi karenge.
-        // Server chalega, lekin API call hone par error dega, jiska hum log mein pata laga sakte hain.
-    }
-})();
+// IMPORTANT: Humne yahan se (async () => { await db.query("SELECT 1"); ... }) hata diya hai.
+// Isse server start hote waqt crash nahi hoga.
+// Database connection error ab API call hone par hi aayega, jise hum Express error handler mein dekh sakenge.
 
 export default db;
