@@ -156,78 +156,67 @@
 //     return NextResponse.json({ error: error.message }, { status: 500 });
 //   }
 // }
-
 import { NextResponse } from "next/server";
 
 // Frontend ke liye live backend URL (jo Vercel variables se aayegi)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// Zaroori: Vercel par build fail hone se bachne ke liye db import hata diya gaya hai.
-// Yeh file ab seedhe Railway Backend se data fetch karegi.
-
-// ✅ Get single event by ID (GET Request)
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const { id } = params;
-
+// --- Helper Function for Clean Fetching ---
+const handleFetch = async (endpoint: string, options: RequestInit = {}) => {
   if (!API_BASE_URL) {
-    return NextResponse.json({ error: "Backend API URL is not configured." }, { status: 500 });
-  }
-
-  try {
-    // Railway Backend ke /api/events/[id] endpoint par GET request bhej rahe hain
-    const response = await fetch(`${API_BASE_URL}/api/events/${id}`, {
-      // Cache ko disable kar rahe hain taki hamesha naya data mile
-      cache: 'no-store', 
-    });
-
-    // Agar Backend se 4xx ya 5xx status aata hai
-    if (!response.ok) {
-      const errorData = await response.json();
-      return NextResponse.json(errorData, { status: response.status });
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: 200 });
-
-  } catch (error) {
-    console.error("GET BY ID Error in Frontend Route:", error);
-    return NextResponse.json({ error: "Failed to fetch event data from the live backend." }, { status: 500 });
-  }
-}
-
-// ✅ Update event by ID (PUT Request)
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  const { id } = params;
-
-  if (!API_BASE_URL) {
-    return NextResponse.json({ error: "Backend API URL is not configured." }, { status: 500 });
+    // If NEXT_PUBLIC_API_URL is missing, return error
+    return { error: "Backend API URL is not configured." };
   }
   
   try {
-    // Body parse 
-    const body = await req.json();
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
 
-    // Railway Backend /api/events/[id] 
-    const response = await fetch(`${API_BASE_URL}/api/events/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Backend
-      body: JSON.stringify(body), 
-    });
-
-    
     if (!response.ok) {
-      const errorData = await response.json();
-      return NextResponse.json(errorData, { status: response.status });
+      // Backend se aaye hue error ko catch karein
+      const errorData = await response.json().catch(() => ({ message: "Backend failed without JSON response." }));
+      return { error: errorData.message || errorData.error || `Backend connection error: ${response.status}` };
     }
 
-    const data = await response.json();
-    return NextResponse.json(data, { status: 200 });
+    return { data: await response.json() };
 
   } catch (error) {
-    console.error("PUT Error in Frontend Route:", error);
-    return NextResponse.json({ error: "Failed to update event via live backend." }, { status: 500 });
+    console.error("Network or Fetch Error:", error);
+    return { error: "Failed to connect to the live backend server." };
   }
+};
+// ------------------------------------------
+
+
+// ✅ Get all events (GET /api/events)
+export async function GET() {
+  // Railway Backend ke /api/events endpoint par GET request bhej rahe hain
+  const { data, error } = await handleFetch("/api/events", { cache: 'no-store' });
+
+  if (error) {
+    console.error("Vercel GET Events Route Failed:", error);
+    // Vercel se 500 status code return karein
+    return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
+  }
+
+  return NextResponse.json(data, { status: 200 });
+}
+
+// ✅ Create new event (POST /api/events)
+export async function POST(req: Request) {
+  const body = await req.json();
+
+  // Railway Backend ke /api/events endpoint par POST request bhej rahe hain
+  const { data, error } = await handleFetch("/api/events", {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (error) {
+    console.error("Vercel POST Event Route Failed:", error);
+    return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
+  }
+
+  // Backend se aaya hua success response return karein (usually 201)
+  return NextResponse.json(data, { status: 201 });
 }
