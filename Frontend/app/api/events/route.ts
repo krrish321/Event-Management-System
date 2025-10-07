@@ -538,7 +538,7 @@
 //     }
 // }
 
-
+import mysql from 'mysql2/promise';
 import { NextResponse } from 'next/server';
 // 1. Apni db file se connection pool ko import karein. Path ko theek karna na bhulein.
 import db from '../../../../backend/config/db';
