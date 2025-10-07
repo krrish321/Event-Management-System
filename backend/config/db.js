@@ -54,36 +54,81 @@
 
 
 
+// import mysql from "mysql2/promise";
+// import dotenv from "dotenv";
+
+// dotenv.config();
+
+// // Port ko hamesha number format mein hona chahiye, par process.env string deta hai.
+// // Railway par MYSQL_PORT set hai (Screenshot 378 mein dikha).
+// // parseInt function se string ko number mein badalte hain.
+// const dbPort = process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT, 10) : 3306;
+
+// // Final DB Connection Configuration
+// const db = mysql.createPool({
+//     // HOST: Railway ka variable (MYSQL_HOST) ya local (localhost)
+//     host: process.env.MYSQL_HOST || process.env.DB_HOST || "localhost",
+    
+//     // USER: Railway ka variable (MYSQL_USER) ya local (root)
+//     user: process.env.MYSQL_USER || process.env.DB_USER || "root",
+    
+//     // PASSWORD: Railway ka variable (MYSQL_PASSWORD) ya local password
+//     password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || "Krrish@567",
+    
+//     // DATABASE NAME: Railway ka variable (MYSQL_DATABASE) ya local name
+//     database: process.env.MYSQL_DATABASE || process.env.DB_NAME || "event_management",
+
+//     // Port ko number format mein bhejein
+//     port: dbPort, 
+
+//     waitForConnections: true,
+//     connectionLimit: 10,
+//     queueLimit: 0,
+// });
+
+// // IMPORTANT: Humne yahan se (async () => { await db.query("SELECT 1"); ... }) hata diya hai.
+// // Isse server start hote waqt crash nahi hoga.
+// // Database connection error ab API call hone par hi aayega, jise hum Express error handler mein dekh sakenge.
+
+// export default db;
+
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 // Port ko hamesha number format mein hona chahiye, par process.env string deta hai.
-// Railway par MYSQL_PORT set hai (Screenshot 378 mein dikha).
+// Railway par MYSQL_PORT set hai.
 // parseInt function se string ko number mein badalte hain.
 const dbPort = process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT, 10) : 3306;
 
 // Final DB Connection Configuration
 const db = mysql.createPool({
-    // HOST: Railway ka variable (MYSQL_HOST) ya local (localhost)
-    host: process.env.MYSQL_HOST || process.env.DB_HOST || "localhost",
-    
-    // USER: Railway ka variable (MYSQL_USER) ya local (root)
-    user: process.env.MYSQL_USER || process.env.DB_USER || "root",
-    
-    // PASSWORD: Railway ka variable (MYSQL_PASSWORD) ya local password
-    password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || "Krrish@567",
-    
-    // DATABASE NAME: Railway ka variable (MYSQL_DATABASE) ya local name
-    database: process.env.MYSQL_DATABASE || process.env.DB_NAME || "event_management",
+    // HOST: Railway ka variable (MYSQL_HOST) ya local (localhost)
+    host: process.env.MYSQL_HOST || process.env.DB_HOST || "localhost",
+    
+    // USER: Railway ka variable (MYSQL_USER) ya local (root)
+    user: process.env.MYSQL_USER || process.env.DB_USER || "root",
+    
+    // PASSWORD: Railway ka variable (MYSQL_PASSWORD) ya local password
+    password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || "Krrish@567",
+    
+    // DATABASE NAME: Railway ka variable (MYSQL_DATABASE) ya local name
+    database: process.env.MYSQL_DATABASE || process.env.DB_NAME || "event_management",
 
-    // Port ko number format mein bhejein
-    port: dbPort, 
+    // Port ko number format mein bhejein
+    port: dbPort, 
 
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
+    // 🔑 ETIMEDOUT FIX: SSL/TLS Configuration Added for Public Connection
+    // Public network connections (jaise Railway ka proxy) ko secure banane ke liye yeh zaroori hai.
+    ssl: {
+        rejectUnauthorized: false
+    },
+    // 🔑 FIX ENDS
+
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
 });
 
 // IMPORTANT: Humne yahan se (async () => { await db.query("SELECT 1"); ... }) hata diya hai.
