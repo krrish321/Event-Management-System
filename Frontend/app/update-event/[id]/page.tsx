@@ -606,6 +606,274 @@
 // }
 
 
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { useRouter, useParams } from "next/navigation";
+// import { Navbar } from "@/components/navbar";
+// import { Button } from "@/components/ui/button";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
+// import { Alert, AlertDescription } from "@/components/ui/alert";
+// import { Separator } from "@/components/ui/separator";
+// import { ArrowLeft, Save, X } from "lucide-react";
+// import { format } from "date-fns";
+
+// export default function UpdateEventPage() {
+//   const [event, setEvent] = useState<any>(null);
+//   const [formData, setFormData] = useState({
+//     location: "",
+//     eventDate: "",
+//     attendeesCount: "",
+//     updatingDate: format(new Date(), "yyyy-MM-dd"),
+//   });
+//   const [photos, setPhotos] = useState<File[]>([]);
+//   const [video, setVideo] = useState<File | null>(null);
+//   const [mediaCoverage, setMediaCoverage] = useState<File[]>([]);
+//   const [success, setSuccess] = useState(false);
+
+//   const router = useRouter();
+//   const params = useParams();
+//   const eventId = params.id as string;
+
+//   // ✅ Fetch event by ID
+//   useEffect(() => {
+//     const fetchEvent = async () => {
+//       try {
+//         const res = await fetch(`https://event-management-system-production-a22d.up.railway.app/api/events/${eventId}`);
+//         if (!res.ok) {
+//           console.error("Fetch event failed:", res.status, res.statusText);
+//           setEvent(null); // trigger "Event Not Found"
+//           return;
+//         }
+//         const data = await res.json();
+//         if (data.id) {
+//           setEvent(data);
+//           setFormData({
+//             location: data.location || "",
+//             eventDate: format(new Date(data.start_datetime), "yyyy-MM-dd"),
+//             attendeesCount: data.attendees_count?.toString() || "0",
+//             updatingDate: format(new Date(), "yyyy-MM-dd"),
+//           });
+//         } else {
+//           setEvent(null);
+//         }
+//       } catch (err) {
+//         console.error("Fetch event error:", err);
+//         setEvent(null);
+//       }
+//     };
+
+//     fetchEvent();
+//   }, [eventId]);
+
+//   const handleInputChange = (field: string, value: string) => {
+//     setFormData((prev) => ({ ...prev, [field]: value }));
+//   };
+
+//   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const files = Array.from(e.target.files || []);
+//     if (photos.length + files.length > 10) return alert("Maximum 10 photos allowed");
+//     setPhotos((prev) => [...prev, ...files]);
+//   };
+
+//   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = e.target.files?.[0];
+//     if (file) {
+//       if (file.size < 10 * 1024 * 1024) return alert("Video must be at least 10MB");
+//       setVideo(file);
+//     }
+//   };
+
+//   const handleMediaCoverageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const files = Array.from(e.target.files || []);
+//     if (mediaCoverage.length + files.length > 5) return alert("Maximum 5 media coverage allowed");
+//     setMediaCoverage((prev) => [...prev, ...files]);
+//   };
+
+//   const removePhoto = (index: number) => setPhotos((prev) => prev.filter((_, i) => i !== index));
+//   const removeMediaCoverage = (index: number) => setMediaCoverage((prev) => prev.filter((_, i) => i !== index));
+//   const removeVideo = () => setVideo(null);
+
+//   // ✅ Save changes
+//   const handleSave = async () => {
+//     try {
+//       const body = {
+//         location: formData.location,
+//         startDate: formData.eventDate,
+//         attendeesCount: formData.attendeesCount,
+//         updatingDate: formData.updatingDate,
+//       };
+
+//       const res = await fetch(`https://event-management-system-production-a22d.up.railway.app/api/events/${eventId}`, {
+//         method: "PUT",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(body),
+//       });
+
+//       const data = await res.json();
+
+//       if (res.ok) {
+//         setSuccess(true);
+//         setTimeout(() => router.push("/user-home"), 2000);
+//       } else {
+//         alert("❌ Failed to update event: " + (data.error || data.message));
+//       }
+//     } catch (error) {
+//       console.error("Update event error:", error);
+//       alert("❌ Something went wrong!");
+//     }
+//   };
+
+//   if (!event) {
+//     return (
+//       <div className="min-h-screen bg-background">
+//         <Navbar />
+//         <div className="max-w-4xl mx-auto px-4 py-8 text-center">
+//           <h1 className="text-2xl font-bold text-destructive">Event Not Found</h1>
+//           <Button onClick={() => router.push("/user-home")} className="mt-4">
+//             Back to Dashboard
+//           </Button>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="min-h-screen bg-background">
+//       <Navbar />
+//       <div className="max-w-4xl mx-auto px-4 py-8">
+//         {/* Header */}
+//         <div className="flex items-center justify-between mb-6">
+//           <Button variant="outline" onClick={() => router.push("/user-home")} className="flex items-center space-x-2">
+//             <ArrowLeft className="w-4 h-4" />
+//             <span>Back to Dashboard</span>
+//           </Button>
+//         </div>
+
+//         {success && (
+//           <Alert className="mb-6 border-primary bg-primary/5">
+//             <Save className="h-4 w-4" />
+//             <AlertDescription className="text-primary font-medium">
+//               Event updated successfully! Redirecting to dashboard...
+//             </AlertDescription>
+//           </Alert>
+//         )}
+
+//         {/* Form */}
+//         <Card className="shadow-lg">
+//           <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5">
+//             <CardTitle className="text-2xl font-bold text-primary">Update Event</CardTitle>
+//             <p className="text-muted-foreground">{event.name}</p>
+//           </CardHeader>
+//           <CardContent className="p-6 space-y-6">
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//               <div className="space-y-2">
+//                 <Label htmlFor="location">Location</Label>
+//                 <Input
+//                   id="location"
+//                   value={formData.location}
+//                   onChange={(e) => handleInputChange("location", e.target.value)}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="eventDate">Event Date</Label>
+//                 <Input
+//                   id="eventDate"
+//                   type="date"
+//                   value={formData.eventDate}
+//                   onChange={(e) => handleInputChange("eventDate", e.target.value)}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="attendeesCount">Attendees Count</Label>
+//                 <Input
+//                   id="attendeesCount"
+//                   type="number"
+//                   value={formData.attendeesCount}
+//                   onChange={(e) => handleInputChange("attendeesCount", e.target.value)}
+//                 />
+//               </div>
+
+//               <div className="space-y-2">
+//                 <Label htmlFor="updatingDate">Updating Date</Label>
+//                 <Input id="updatingDate" type="date" value={formData.updatingDate} disabled />
+//               </div>
+//             </div>
+
+//             <Separator />
+
+//             {/* Media Uploads */}
+//             <div className="space-y-6">
+//               {/* Photos */}
+//               <div className="space-y-2">
+//                 <Label>Event Photos (Max 10)</Label>
+//                 <Input type="file" multiple accept="image/*" onChange={handlePhotoUpload} />
+//                 <div className="flex flex-wrap gap-2 mt-2">
+//                   {photos.map((f, i) => (
+//                     <div key={i} className="flex items-center space-x-1 bg-muted p-1 rounded">
+//                       <span className="truncate max-w-xs">{f.name}</span>
+//                       <Button size="sm" variant="destructive" onClick={() => removePhoto(i)}>
+//                         <X className="w-3 h-3" />
+//                       </Button>
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+
+//               {/* Video */}
+//               <div className="space-y-2">
+//                 <Label>Event Video (Min 10MB)</Label>
+//                 <Input type="file" accept="video/*" onChange={handleVideoUpload} />
+//                 {video && (
+//                   <div className="flex items-center space-x-2 mt-2 bg-muted p-1 rounded">
+//                     <span>{video.name}</span>
+//                     <Button size="sm" variant="destructive" onClick={removeVideo}>
+//                       <X className="w-3 h-3" />
+//                     </Button>
+//                   </div>
+//                 )}
+//               </div>
+
+//               {/* Media Coverage */}
+//               <div className="space-y-2">
+//                 <Label>Media Coverage (Max 5)</Label>
+//                 <Input type="file" multiple accept="image/*" onChange={handleMediaCoverageUpload} />
+//                 <div className="flex flex-wrap gap-2 mt-2">
+//                   {mediaCoverage.map((f, i) => (
+//                     <div key={i} className="flex items-center space-x-1 bg-muted p-1 rounded">
+//                       <span className="truncate max-w-xs">{f.name}</span>
+//                       <Button size="sm" variant="destructive" onClick={() => removeMediaCoverage(i)}>
+//                         <X className="w-3 h-3" />
+//                       </Button>
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+//             </div>
+
+//             <Separator />
+
+//             {/* Action Buttons */}
+//             <div className="flex items-center justify-center space-x-4 pt-4">
+//               <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 flex items-center space-x-2" size="lg">
+//                 <Save className="w-4 h-4" />
+//                 <span>Save Changes</span>
+//               </Button>
+//               <Button variant="outline" onClick={() => router.push("/user-home")} size="lg">
+//                 Cancel
+//               </Button>
+//             </div>
+//           </CardContent>
+//         </Card>
+//       </div>
+//     </div>
+//   );
+// }
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -698,12 +966,21 @@ export default function UpdateEventPage() {
 
   // ✅ Save changes
   const handleSave = async () => {
+    if (!event) return;
+
     try {
       const body = {
-        location: formData.location,
+        eventName: event.name || "Default Name",       // required by backend
+        description: event.description || "",          // required by backend
         startDate: formData.eventDate,
-        attendeesCount: formData.attendeesCount,
-        updatingDate: formData.updatingDate,
+        startTime: "10:00:00",                         // default if not in form
+        endDate: formData.eventDate,
+        endTime: "12:00:00",                           // default if not in form
+        issueDate: format(new Date(), "yyyy-MM-dd"),   // can use existing event.issue_date
+        location: formData.location,
+        level: event.level || "Jila",                  // backend enum match
+        eventType: event.event_type || "Meeting",      // backend enum match
+        assignedUser: event.created_by || 1            // backend expects number
       };
 
       const res = await fetch(`https://event-management-system-production-a22d.up.railway.app/api/events/${eventId}`, {
