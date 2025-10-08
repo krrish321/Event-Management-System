@@ -324,7 +324,7 @@ export default function EventDetailsPage() { // Renamed from AdminEventDetailsPa
 
             try {
                 // ✅ FIX 2: Real data fetch from new API endpoint
-                const res = await fetch(`/api/events/${eventId}`)
+                const res = await fetch(`https://event-management-system-production-a22d.up.railway.app/api/events/${eventId}`)
                 
                 if (!res.ok) {
                     // Check for 404 to avoid throwing a general error on valid event IDs not found
