@@ -138,6 +138,63 @@
 // export default db;
 
 
+// import mysql from "mysql2/promise";
+// import dotenv from "dotenv";
+
+// dotenv.config();
+
+// // Port ko number format mein change karte hain
+// const dbPort = process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT, 10) : 3306;
+
+// // Database URL ko prefer karte hain, agar available ho.
+// // Yeh Railway par sabse zyada reliable tareeka hai.
+// const connectionUrl = process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL;
+
+// // Final DB Connection Pool Configuration
+// const dbConfig = connectionUrl ? 
+//     // Option 1: Agar URL available hai (Cloud environment)
+//     {
+//         uri: connectionUrl,
+//         // SSL/TLS settings for Vercel/Railway ETIMEDOUT fix
+//         ssl: {
+//             rejectUnauthorized: false
+//         },
+//         // Additional settings
+//         waitForConnections: true,
+//         connectionLimit: 10,
+//         queueLimit: 0,
+//     }
+//     : 
+//     // Option 2: Agar URL available nahi hai (Local environment)
+//     {
+//         // HOST: Railway ka variable ya local (localhost)
+//         host: process.env.MYSQL_HOST || process.env.DB_HOST || "localhost",
+        
+//         // USER: Railway ka variable ya local (root)
+//         user: process.env.MYSQL_USER || process.env.DB_USER || "root",
+        
+//         // PASSWORD: Railway ka variable ya local password
+//         password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || "Krrish@567",
+        
+//         // DATABASE NAME: Railway ka variable ya local name
+//         database: process.env.MYSQL_DATABASE || process.env.DB_NAME || "event_management",
+
+//         // Port ko number format mein bhejein
+//         port: dbPort, 
+
+//         // Connection pool settings
+//         waitForConnections: true,
+//         connectionLimit: 10,
+//         queueLimit: 0,
+//     };
+
+// // Connection Pool banao
+// const db = mysql.createPool(dbConfig);
+
+// export default db;
+
+
+// db.js
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
@@ -146,46 +203,29 @@ dotenv.config();
 // Port ko number format mein change karte hain
 const dbPort = process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT, 10) : 3306;
 
-// Database URL ko prefer karte hain, agar available ho.
-// Yeh Railway par sabse zyada reliable tareeka hai.
+// Database URL ko prefer karte hain, agar available ho (Railway/Cloud)
 const connectionUrl = process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL;
 
 // Final DB Connection Pool Configuration
 const dbConfig = connectionUrl ? 
-    // Option 1: Agar URL available hai (Cloud environment)
     {
         uri: connectionUrl,
-        // SSL/TLS settings for Vercel/Railway ETIMEDOUT fix
-        ssl: {
-            rejectUnauthorized: false
-        },
-        // Additional settings
+        ssl: { rejectUnauthorized: false }, // ETIMEDOUT fix
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
-    }
+    } 
     : 
-    // Option 2: Agar URL available nahi hai (Local environment)
     {
-        // HOST: Railway ka variable ya local (localhost)
-        host: process.env.MYSQL_HOST || process.env.DB_HOST || "localhost",
-        
-        // USER: Railway ka variable ya local (root)
-        user: process.env.MYSQL_USER || process.env.DB_USER || "root",
-        
-        // PASSWORD: Railway ka variable ya local password
-        password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || "Krrish@567",
-        
-        // DATABASE NAME: Railway ka variable ya local name
-        database: process.env.MYSQL_DATABASE || process.env.DB_NAME || "event_management",
-
-        // Port ko number format mein bhejein
-        port: dbPort, 
-
-        // Connection pool settings
+        host: process.env.MYSQL_HOST || "localhost",
+        user: process.env.MYSQL_USER || "root",
+        password: process.env.MYSQL_PASSWORD || "Krrish@567",
+        database: process.env.MYSQL_DATABASE || "event_management",
+        port: dbPort,
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
+        ssl: { rejectUnauthorized: false }, // Cloud ke liye safe
     };
 
 // Connection Pool banao
