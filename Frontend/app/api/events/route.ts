@@ -538,89 +538,151 @@
 //     }
 // }
 
+// import mysql from 'mysql2/promise';
+// import { NextResponse } from 'next/server';
+// // 1. Apni db file se connection pool ko import karein. Path ko theek karna na bhulein.
+// import db from '../../../../backend/config/db';
+
+// // 2. dbConfig ko hata diya gaya hai, kyunki ab hum imported 'db' pool use kar rahe hain.
+
+
+// // ✅ GET all events
+// export async function GET() {
+//     let connection;
+//     try {
+//         // Connection Pool se ek connection lein
+//         connection = await db.getConnection(); 
+        
+//         const [rows] = await connection.execute("SELECT * FROM events ORDER BY start_datetime DESC");
+        
+//         return NextResponse.json(rows, { status: 200 });
+//     } catch (err) {
+//         // 🔥 CRITICAL: Yahan hum exact error ko server logs mein print kar rahe hain.
+//         console.error("GET Error - Database Connection/Query Failed:", (err as Error).message);
+//         return NextResponse.json({ error: "Failed to fetch events. Check server logs for DB error." }, { status: 500 });
+//     } finally {
+//         // Connection ko hamesha pool mein release karna zaruri hai
+//         if (connection) {
+//             connection.release(); // <-- connection.end() ki jagah connection.release()
+//         }
+//     }
+// }
+
+// // ✅ POST new event
+// export async function POST(req: Request) {
+//     let connection;
+//     try {
+//         const data = await req.json();
+        
+//         // Ensure data exists and basic fields are present
+//         if (!data || !data.eventName || !data.startDate) {
+//             return NextResponse.json({ message: "Missing required fields (eventName, startDate)" }, { status: 400 });
+//         }
+
+//         // Connection Pool se ek connection lein
+//         connection = await db.getConnection(); // <-- mysql.createConnection() ki jagah
+
+//         const {
+//             eventName,
+//             description,
+//             startDate,
+//             startTime,
+//             endDate,
+//             endTime,
+//             issueDate,
+//             location,
+//             eventType,
+//             level,
+//             assignedUser,
+//         } = data;
+
+//         const start_datetime = `${startDate} ${startTime}`;
+//         const end_datetime = `${endDate} ${endTime}`;
+
+//         const query = `
+//             INSERT INTO events 
+//             (name, description, start_datetime, end_datetime, issue_date, location, event_type, level, created_by) 
+//             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+//         `;
+
+//         const values = [eventName, description, start_datetime, end_datetime, issueDate, location, eventType, level, assignedUser];
+        
+//         const [result] = await connection.execute(query, values);
+
+//         return NextResponse.json(
+//             { message: "Event created successfully!", eventId: (result as any).insertId },
+//             { status: 201 }
+//         );
+//     } catch (err) {
+//         // 🔥 CRITICAL: Yahan hum exact error ko server logs mein print kar rahe hain.
+//         console.error("POST Error - Database Connection/Query Failed:", (err as Error).message);
+//         return NextResponse.json({ error: "Something went wrong during event creation. Check server logs for DB error." }, { status: 500 });
+//     } finally {
+//         // Connection ko hamesha pool mein release karna zaruri hai
+//         if (connection) {
+//             connection.release(); // <-- connection.end() ki jagah connection.release()
+//         }
+//     }
+// }
+
+
 import mysql from 'mysql2/promise';
 import { NextResponse } from 'next/server';
-// 1. Apni db file se connection pool ko import karein. Path ko theek karna na bhulein.
-import db from '../../../../backend/config/db';
 
-// 2. dbConfig ko hata diya gaya hai, kyunki ab hum imported 'db' pool use kar rahe hain.
-
+const dbConfig = {
+  host: process.env.MYSQL_HOST || process.env.DB_HOST || "localhost",
+  user: process.env.MYSQL_USER || process.env.DB_USER || "root",
+  password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || "Krrish@567",
+  database: process.env.MYSQL_DATABASE || process.env.DB_NAME || "event_management",
+  port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT, 10) : 3306,
+  timezone: 'Z',
+  ssl: { rejectUnauthorized: true },
+};
 
 // ✅ GET all events
 export async function GET() {
-    let connection;
-    try {
-        // Connection Pool se ek connection lein
-        connection = await db.getConnection(); 
-        
-        const [rows] = await connection.execute("SELECT * FROM events ORDER BY start_datetime DESC");
-        
-        return NextResponse.json(rows, { status: 200 });
-    } catch (err) {
-        // 🔥 CRITICAL: Yahan hum exact error ko server logs mein print kar rahe hain.
-        console.error("GET Error - Database Connection/Query Failed:", (err as Error).message);
-        return NextResponse.json({ error: "Failed to fetch events. Check server logs for DB error." }, { status: 500 });
-    } finally {
-        // Connection ko hamesha pool mein release karna zaruri hai
-        if (connection) {
-            connection.release(); // <-- connection.end() ki jagah connection.release()
-        }
-    }
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute("SELECT * FROM events ORDER BY start_datetime DESC");
+    return NextResponse.json(rows, { status: 200 });
+  } catch (err) {
+    console.error("GET Error:", (err as Error).message);
+    return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
+  } finally {
+    if (connection) await connection.end();
+  }
 }
 
 // ✅ POST new event
 export async function POST(req: Request) {
-    let connection;
-    try {
-        const data = await req.json();
-        
-        // Ensure data exists and basic fields are present
-        if (!data || !data.eventName || !data.startDate) {
-            return NextResponse.json({ message: "Missing required fields (eventName, startDate)" }, { status: 400 });
-        }
+  let connection;
+  try {
+    const data = await req.json();
+    const {
+      eventName, description, startDate, startTime, endDate, endTime,
+      issueDate, location, eventType, level, assignedUser,
+    } = data;
 
-        // Connection Pool se ek connection lein
-        connection = await db.getConnection(); // <-- mysql.createConnection() ki jagah
+    const start_datetime = `${startDate} ${startTime}`;
+    const end_datetime = `${endDate} ${endTime}`;
 
-        const {
-            eventName,
-            description,
-            startDate,
-            startTime,
-            endDate,
-            endTime,
-            issueDate,
-            location,
-            eventType,
-            level,
-            assignedUser,
-        } = data;
+    connection = await mysql.createConnection(dbConfig);
+    const [result] = await connection.execute(
+      `INSERT INTO events 
+       (name, description, start_datetime, end_datetime, issue_date, location, event_type, level, created_by) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [eventName, description, start_datetime, end_datetime, issueDate, location, eventType, level, assignedUser]
+    );
 
-        const start_datetime = `${startDate} ${startTime}`;
-        const end_datetime = `${endDate} ${endTime}`;
-
-        const query = `
-            INSERT INTO events 
-            (name, description, start_datetime, end_datetime, issue_date, location, event_type, level, created_by) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        const values = [eventName, description, start_datetime, end_datetime, issueDate, location, eventType, level, assignedUser];
-        
-        const [result] = await connection.execute(query, values);
-
-        return NextResponse.json(
-            { message: "Event created successfully!", eventId: (result as any).insertId },
-            { status: 201 }
-        );
-    } catch (err) {
-        // 🔥 CRITICAL: Yahan hum exact error ko server logs mein print kar rahe hain.
-        console.error("POST Error - Database Connection/Query Failed:", (err as Error).message);
-        return NextResponse.json({ error: "Something went wrong during event creation. Check server logs for DB error." }, { status: 500 });
-    } finally {
-        // Connection ko hamesha pool mein release karna zaruri hai
-        if (connection) {
-            connection.release(); // <-- connection.end() ki jagah connection.release()
-        }
-    }
+    return NextResponse.json(
+      { message: "Event created successfully!", eventId: (result as any).insertId },
+      { status: 201 }
+    );
+  } catch (err) {
+    console.error("POST Error:", (err as Error).message);
+    return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
+  } finally {
+    if (connection) await connection.end();
+  }
 }
