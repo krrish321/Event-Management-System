@@ -172,7 +172,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import userRoutes from "./routes/userRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
-import db from "./db.js"; // db connection import
+import db from "./config/db.js";
 
 dotenv.config();
 
