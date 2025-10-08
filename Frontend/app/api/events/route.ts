@@ -626,17 +626,81 @@
 // }
 
 
+// import mysql from 'mysql2/promise';
+// import { NextResponse } from 'next/server';
+
+// const dbConfig = {
+//   host: process.env.MYSQL_HOST || process.env.DB_HOST || "localhost",
+//   user: process.env.MYSQL_USER || process.env.DB_USER || "root",
+//   password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || "Krrish@567",
+//   database: process.env.MYSQL_DATABASE || process.env.DB_NAME || "event_management",
+//   port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT, 10) : 3306,
+//   timezone: 'Z',
+//   ssl: { rejectUnauthorized: true },
+// };
+
+// // ✅ GET all events
+// export async function GET() {
+//   let connection;
+//   try {
+//     connection = await mysql.createConnection(dbConfig);
+//     const [rows] = await connection.execute("SELECT * FROM events ORDER BY start_datetime DESC");
+//     return NextResponse.json(rows, { status: 200 });
+//   } catch (err) {
+//     console.error("GET Error:", (err as Error).message);
+//     return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
+//   } finally {
+//     if (connection) await connection.end();
+//   }
+// }
+
+// // ✅ POST new event
+// export async function POST(req: Request) {
+//   let connection;
+//   try {
+//     const data = await req.json();
+//     const {
+//       eventName, description, startDate, startTime, endDate, endTime,
+//       issueDate, location, eventType, level, assignedUser,
+//     } = data;
+
+//     const start_datetime = `${startDate} ${startTime}`;
+//     const end_datetime = `${endDate} ${endTime}`;
+
+//     connection = await mysql.createConnection(dbConfig);
+//     const [result] = await connection.execute(
+//       `INSERT INTO events 
+//        (name, description, start_datetime, end_datetime, issue_date, location, event_type, level, created_by) 
+//        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//       [eventName, description, start_datetime, end_datetime, issueDate, location, eventType, level, assignedUser]
+//     );
+
+//     return NextResponse.json(
+//       { message: "Event created successfully!", eventId: (result as any).insertId },
+//       { status: 201 }
+//     );
+//   } catch (err) {
+//     console.error("POST Error:", (err as Error).message);
+//     return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
+//   } finally {
+//     if (connection) await connection.end();
+//   }
+// }
+
+
+// app/api/events/route.ts
 import mysql from 'mysql2/promise';
 import { NextResponse } from 'next/server';
 
 const dbConfig = {
-  host: process.env.MYSQL_HOST || process.env.DB_HOST || "localhost",
-  user: process.env.MYSQL_USER || process.env.DB_USER || "root",
-  password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || "Krrish@567",
-  database: process.env.MYSQL_DATABASE || process.env.DB_NAME || "event_management",
+  host: process.env.MYSQL_HOST || "localhost",
+  user: process.env.MYSQL_USER || "root",
+  password: process.env.MYSQL_PASSWORD || "password",
+  database: process.env.MYSQL_DATABASE || "event_management",
   port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT, 10) : 3306,
   timezone: 'Z',
-  ssl: { rejectUnauthorized: true },
+  ssl: process.env.MYSQL_HOST?.includes("railway") ? { rejectUnauthorized: false } : undefined,
+  connectTimeout: 10000, // 10 seconds
 };
 
 // ✅ GET all events
@@ -644,10 +708,12 @@ export async function GET() {
   let connection;
   try {
     connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute("SELECT * FROM events ORDER BY start_datetime DESC");
+    const [rows] = await connection.execute(
+      "SELECT * FROM events ORDER BY start_datetime DESC"
+    );
     return NextResponse.json(rows, { status: 200 });
   } catch (err) {
-    console.error("GET Error:", (err as Error).message);
+    console.error("GET Error Full:", err);
     return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
   } finally {
     if (connection) await connection.end();
@@ -660,12 +726,21 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
     const {
-      eventName, description, startDate, startTime, endDate, endTime,
-      issueDate, location, eventType, level, assignedUser,
+      eventName,
+      description,
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+      issueDate,
+      location,
+      eventType,
+      level,
+      assignedUser,
     } = data;
 
-    const start_datetime = `${startDate} ${startTime}`;
-    const end_datetime = `${endDate} ${endTime}`;
+    const start_datetime = `${startDate} ${startTime || '00:00:00'}`;
+    const end_datetime = `${endDate} ${endTime || '23:59:59'}`;
 
     connection = await mysql.createConnection(dbConfig);
     const [result] = await connection.execute(
@@ -680,7 +755,7 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (err) {
-    console.error("POST Error:", (err as Error).message);
+    console.error("POST Error Full:", err);
     return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
   } finally {
     if (connection) await connection.end();
