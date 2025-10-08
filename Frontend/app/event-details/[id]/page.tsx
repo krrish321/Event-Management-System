@@ -296,7 +296,7 @@ export default function EventDetailsPage() {
     const fetchEvent = async () => {
       setLoading(true)
       try {
-        const res = await fetch(`https://event-management-system-production-a22d.up.railway.app/api/events/api/events/${eventId}`)
+        const res = await fetch(`https://event-management-system-production-a22d.up.railway.app/api/events/${eventId}`)
         if (!res.ok) throw new Error("Event not found")
         const data: Event = await res.json()
         setEvent(data)
