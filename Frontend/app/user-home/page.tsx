@@ -1156,7 +1156,7 @@ export default function UserHomePage() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/events`, { cache: "no-store" });
+      const res = await fetch("https://event-management-system-production-a22d.up.railway.app/api/events", { cache: "no-store" });
       
       if (!res.ok) {
         const errorText = await res.text();
