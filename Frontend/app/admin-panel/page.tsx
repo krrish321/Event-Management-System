@@ -30,7 +30,7 @@ export default function AdminPanelPage() {
     try {
       // ✅ CORRECTED: Use relative path for internal Next.js API route.
       // This fix addresses the original issue of data not showing due to a bad API URL.
-      const res = await fetch(`/api/events`, { cache: "no-store" });
+      const res = await fetch("https://event-management-system-production-a22d.up.railway.app/api/events", { cache: "no-store" });
       
       if (!res.ok) {
         // Log the status and text to help debugging failed fetches
