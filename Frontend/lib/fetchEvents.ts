@@ -18,7 +18,7 @@ export const fetchEventsFromBackend = async (): Promise<Event[]> => {
 
     if (!API_BASE) throw new Error("NEXT_PUBLIC_API_URL is not defined")
 
-    const res = await fetch(`${API_BASE}/api/events`, { 
+    const res = await fetch("https://event-management-system-production-a22d.up.railway.app/api/events", { 
       // ✅ FIX: Dynamic Server Usage error  revalidate: 0 use
       next: {
         revalidate: 0,

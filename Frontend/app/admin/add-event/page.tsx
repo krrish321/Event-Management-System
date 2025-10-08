@@ -73,7 +73,7 @@ export default function AddEventPage() {
 
       // ❌ REMOVED: const apiURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
       // ✅ CORRECTED: Use the relative path for the internal Next.js API Route.
-      const res = await fetch(`/api/events`, {
+      const res = await fetch("https://event-management-system-production-a22d.up.railway.app/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

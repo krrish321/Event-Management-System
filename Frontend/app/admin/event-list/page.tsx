@@ -146,7 +146,7 @@ export default function AdminEventListPage() {
         setError(null);
 
         // ✅ The fetch must use the RELATIVE path: /api/events
-        const res = await fetch('/api/events'); 
+        const res = await fetch("https://event-management-system-production-a22d.up.railway.app/api/events"); 
         
         if (!res.ok) {
           throw new Error(`Failed to fetch events: ${res.status} ${res.statusText}`);

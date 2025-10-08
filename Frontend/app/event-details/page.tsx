@@ -22,7 +22,7 @@ export default function EventsPage() {
   useEffect(() => {
     async function fetchEvents() {
       try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events`);
+      const response = await fetch("https://event-management-system-production-a22d.up.railway.app/api/events");
 
         
         if (!response.ok) {
